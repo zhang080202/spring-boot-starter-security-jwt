@@ -1,0 +1,56 @@
+package com.github.security.configuration;
+
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.web.HttpSecurityBuilder;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
+
+import com.github.security.authcatication.JwtAuthenticationFailureHandler;
+import com.github.security.filters.JwtAuthenticationFilter;
+
+/**
+ * Jwt 认证 配置器
+ * @author zhangyf
+ * @date 2019年8月16日
+ */
+public class JwtAuthenticationConfigurer<T extends JwtAuthenticationConfigurer<T, B>, B extends HttpSecurityBuilder<B>> extends AbstractHttpConfigurer<T, B> {
+	
+	private JwtAuthenticationFilter authFilter;
+	private AuthenticationManager authenticationManager;
+	
+	@Override
+	public void init(B builder) throws Exception {
+		authFilter = new JwtAuthenticationFilter();
+		authenticationManager = builder.getSharedObject(AuthenticationManager.class);
+	}
+	
+	@Override
+	public void configure(B builder) throws Exception {
+		authFilter.setAuthenticationManager(authenticationManager);
+		authFilter.setAuthenticationFailureHandler(new JwtAuthenticationFailureHandler());
+		
+		authFilter = postProcess(authFilter);
+		builder.addFilterBefore(authFilter, LogoutFilter.class);
+	}
+	
+	/**
+	 * 设置白名单
+	 * @param urls
+	 * @return
+	 */
+	public JwtAuthenticationConfigurer<T, B> permissiveRequestUrls(String ... urls){
+		authFilter.setPermissiveUrl(urls);
+		return this;
+	}
+	
+	/**
+	 * 设置认证成功后的操作
+	 * @param successHandler
+	 * @return
+	 */
+	public JwtAuthenticationConfigurer<T, B> authenticationSuccessHandler(AuthenticationSuccessHandler successHandler){
+		authFilter.setAuthenticationSuccessHandler(successHandler);
+		return this;
+	}
+}
