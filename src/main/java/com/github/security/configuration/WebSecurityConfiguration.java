@@ -9,12 +9,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserCache;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.header.Header;
 import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -24,12 +25,13 @@ import org.springframework.web.filter.CorsFilter;
 
 import com.github.security.authcatication.JwtAuthenticationProvider;
 import com.github.security.authcatication.JwtRefreshSuccessHandler;
+import com.github.security.authcatication.LoginSuccessHandler;
+import com.github.security.authcatication.TokenClearLogoutHandler;
 import com.github.security.filters.OptionsRequestFilter;
 import com.github.security.service.JwtUserDetailsService;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	
 	@Autowired
@@ -40,6 +42,8 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	
 	@Autowired
 	private JwtProperties p;
+	
+	private static final String DEFAULT_PERMITURL = "/login/**";
 
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -49,14 +53,13 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
 	@Override
 	public void configure(WebSecurity web) throws Exception {
-		// TODO Auto-generated method stub
 		super.configure(web);
 	}
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		http.authorizeRequests()
-	        .regexMatchers(getPermitUrls()).permitAll()
+	        .antMatchers(getPermitUrls()).permitAll()
 	        .anyRequest().authenticated()
 	        .and()
 		    .csrf().disable()
@@ -69,16 +72,16 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 		    		new Header("Access-Control-Expose-Headers","Authorization"))))
 		    .and()
 		    .addFilterAfter(new OptionsRequestFilter(), CorsFilter.class)
-//		    .apply(new JsonLoginConfigurer<>()).loginSuccessHandler(jsonLoginSuccessHandler())
-//		    .and()
+		    .apply(new LoginConfigurer<>(userDetailsService)).authenticationSuccessHandler(loginSuccessHandler())
+		    .and()
 		    .apply(new JwtAuthenticationConfigurer<>())
 		    	.authenticationSuccessHandler(jwtRefreshSuccessHandler())
 		    	.permissiveRequestUrls(getPermitUrls())
 		    .and()
-//		    .logout()
-//		        .addLogoutHandler(tokenClearLogoutHandler())
-//		        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler())
-//		    .and()
+		    .logout()
+		        .addLogoutHandler(tokenClearLogoutHandler())
+		        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler())
+		    .and()
 		    .sessionManagement().disable();
 	}
 	
@@ -96,6 +99,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	protected AuthenticationProvider getDaoAuthenticationProvider() throws Exception{
 		DaoAuthenticationProvider daoProvider = new DaoAuthenticationProvider();
 		daoProvider.setUserDetailsService(userDetailsService);
+		daoProvider.setPasswordEncoder(new BCryptPasswordEncoder());
 		return daoProvider;
 	}
 	
@@ -106,8 +110,29 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 		return refreshSuccessHandler;
 	}
 	
+	@Bean 
+	public LoginSuccessHandler loginSuccessHandler() {
+		return new LoginSuccessHandler(userDetailsService);
+	}
+	
+	@Bean
+	public TokenClearLogoutHandler tokenClearLogoutHandler() {
+		return new TokenClearLogoutHandler(userDetailsService);
+	}
+	
+//	@Bean
+//	@ConditionalOnMissingBean
+//	public JwtUserDetailsService getJwtUserDetailsService() {
+//		userDetailsService = new NullJwtUserDetailsService();
+//		return userDetailsService;
+//	}
+	
 	String[] getPermitUrls() {
-		return StringUtils.split(p.getPermitUrls(), ",");
+		String urls = p.getPermitUrls();
+		if (StringUtils.isBlank(urls)) {
+			urls = DEFAULT_PERMITURL;
+		}
+		return StringUtils.split(urls, ",");
 	}
 	
 	@Bean

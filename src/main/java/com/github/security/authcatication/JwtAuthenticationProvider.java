@@ -2,32 +2,39 @@ package com.github.security.authcatication;
 
 import java.util.Calendar;
 
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.cache.NullUserCache;
 import org.springframework.util.Assert;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.security.service.JwtUserDetailsService;
 import com.github.security.utils.JwtAuthenticationToken;
+import com.github.security.utils.JwtUtils;
 
 /**
  * jwt认证主要逻辑
  * @author zhangyf
  * @date 2019年8月16日
  */
-public class JwtAuthenticationProvider implements AuthenticationProvider {
+public class JwtAuthenticationProvider implements AuthenticationProvider, InitializingBean {
 	
-	private UserDetailsService userDetailsService;
+	private JwtUserDetailsService userDetailsService;
 	
 	private UserCache userCache = new NullUserCache();
+	
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		Assert.notNull(this.userCache, "A user cache must be set");
+		Assert.notNull(this.userDetailsService, "A UserDetailsService must be set");
+	}
 	
 	@Override
 	public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -47,14 +54,9 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 				return null;
 			}
 		}
-		// 验证 token
-		String encryptSalt = user.getPassword();
+		String salt = getSalt(username);
 		try {
-            Algorithm algorithm = Algorithm.HMAC256(encryptSalt);
-            JWTVerifier verifier = JWT.require(algorithm)
-				                      .withSubject(username)
-				                      .build();
-            verifier.verify(jwt.getToken());
+			JwtUtils.checkJWT(jwt.getToken(), salt, username);
         } catch (Exception e) {
             throw new BadCredentialsException("Jwt verify fail", e);
         }
@@ -68,12 +70,20 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 		return authentication.isAssignableFrom(JwtAuthenticationToken.class);
 	}
 
-	public void setUserDetailsService(UserDetailsService userDetailsService) {
+	public void setUserDetailsService(JwtUserDetailsService userDetailsService) {
 		this.userDetailsService = userDetailsService;
 	}
 
 	public void setUserCache(UserCache userCache) {
 		this.userCache = userCache;
+	}
+	
+	protected String getSalt(String username) {
+		String salt = userDetailsService.getSalt(username);
+		if (StringUtils.isBlank(salt)) {
+			salt = JwtUtils.TOKEN_SALT;
+		}
+		return salt;
 	}
 	
 }

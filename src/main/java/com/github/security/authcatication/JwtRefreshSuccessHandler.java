@@ -9,6 +9,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -47,10 +48,15 @@ public class JwtRefreshSuccessHandler implements AuthenticationSuccessHandler{
 			//刷新token
 			//这里根据配置会刷新 Cache、DB中的token
 			UserDetails user = (UserDetails)authentication.getPrincipal();
-            String newToken = generToken(user);
             
             userCache.putUserInCache(user);
-            jwtUserDetailsService.insertToken(newToken, user);
+            
+            String salt = jwtUserDetailsService.getSalt(user.getUsername());
+            if (StringUtils.isBlank(salt)) {
+				salt = JwtUtils.TOKEN_SALT;
+			}
+            String newToken = generToken(user, salt);
+            jwtUserDetailsService.insertSalt(newToken, user);
             
             response.setHeader("Authorization", newToken);
         }	
@@ -63,8 +69,8 @@ public class JwtRefreshSuccessHandler implements AuthenticationSuccessHandler{
         return LocalDateTime.now().minusSeconds(tokenRefreshInterval).isAfter(issueTime);
     }
 	
-	private String generToken(UserDetails user) {
-		return JwtUtils.createToken(user.getUsername(), user.getAuthorities(), false);
+	private String generToken(UserDetails user, String salt) {
+		return JwtUtils.createToken(user.getUsername(), user.getAuthorities(), false, salt);
 	}
 
 	public void setUserCache(UserCache userCache) {

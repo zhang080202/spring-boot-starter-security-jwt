@@ -18,11 +18,26 @@ import org.springframework.util.StringUtils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.github.security.JwtUser;
+import com.github.security.service.JwtUserDetailsService;
 
+/**
+ *  登录过滤器
+ * @author zhangyf
+ * 2019年8月17日
+ */
 public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 	
+	public static final String SPRING_SECURITY_FORM_USERNAME_KEY = "username";
+	public static final String SPRING_SECURITY_FORM_PASSWORD_KEY = "password";
+
+	private String usernameParameter = SPRING_SECURITY_FORM_USERNAME_KEY;
+	private String passwordParameter = SPRING_SECURITY_FORM_PASSWORD_KEY;
+	
+	private JwtUserDetailsService jwtUserDetailsService;
+	
 	public LoginAuthenticationFilter() {
-		super(new AntPathRequestMatcher("/login", "POST"));
+		super(new AntPathRequestMatcher("/**/login", "POST"));
 	}
 	
 	@Override
@@ -36,12 +51,9 @@ public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingF
 	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
 			throws AuthenticationException, IOException, ServletException {
 		String body = StreamUtils.copyToString(request.getInputStream(), Charset.forName("UTF-8"));
-		String username = null, password = null;
-		if(StringUtils.hasText(body)) {
-		    JSONObject jsonObj = JSON.parseObject(body);
-		    username = jsonObj.getString("username");
-		    password = jsonObj.getString("password");
-		}	
+		
+		String username = obtainUsername(body);
+		String password = obtainPassword(body);
 		
 		if (username == null) 
 			username = "";
@@ -52,7 +64,36 @@ public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingF
 		UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(
 				username, password);
 		
-		return this.getAuthenticationManager().authenticate(authRequest);
+		Authentication authenticate = this.getAuthenticationManager().authenticate(authRequest);
+		authenticate.setAuthenticated(false);
+		
+		return authenticate;
 	}
 
+	protected String obtainPassword(String body) throws IOException {
+		return getStringFromRequest(body, passwordParameter);
+	}
+
+	protected String obtainUsername(String body) throws IOException {
+		return getStringFromRequest(body, usernameParameter);
+	}
+	
+	protected String getStringFromRequest(String body, String key) throws IOException {
+		String result = null;
+		if(StringUtils.hasText(body) && !StringUtils.isEmpty(key)) {
+		    JSONObject jsonObj = JSON.parseObject(body);
+		    result = jsonObj.getString(key);
+		}
+		return result;
+	}
+
+	public JwtUserDetailsService getJwtUserDetailsService() {
+		return jwtUserDetailsService;
+	}
+
+	public void setJwtUserDetailsService(JwtUserDetailsService jwtUserDetailsService) {
+		this.jwtUserDetailsService = jwtUserDetailsService;
+	}
+	
+	
 }

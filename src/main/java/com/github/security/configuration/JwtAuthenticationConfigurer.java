@@ -17,17 +17,14 @@ import com.github.security.filters.JwtAuthenticationFilter;
 public class JwtAuthenticationConfigurer<T extends JwtAuthenticationConfigurer<T, B>, B extends HttpSecurityBuilder<B>> extends AbstractHttpConfigurer<T, B> {
 	
 	private JwtAuthenticationFilter authFilter;
-	private AuthenticationManager authenticationManager;
 	
-	@Override
-	public void init(B builder) throws Exception {
+	public JwtAuthenticationConfigurer() {
 		authFilter = new JwtAuthenticationFilter();
-		authenticationManager = builder.getSharedObject(AuthenticationManager.class);
 	}
 	
 	@Override
 	public void configure(B builder) throws Exception {
-		authFilter.setAuthenticationManager(authenticationManager);
+		authFilter.setAuthenticationManager(builder.getSharedObject(AuthenticationManager.class));
 		authFilter.setAuthenticationFailureHandler(new JwtAuthenticationFailureHandler());
 		
 		authFilter = postProcess(authFilter);

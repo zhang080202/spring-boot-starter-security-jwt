@@ -1,0 +1,24 @@
+{
+  "groups": [
+    {
+      "name": "jwt.security",
+      "type": "com.github.security.configuration.JwtProperties",
+      "sourceType": "com.github.security.configuration.JwtProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "jwt.security.permit-urls",
+      "type": "java.util.List",
+      "sourceType": "com.github.security.configuration.JwtProperties",
+      "description": "白名单"
+    },
+    {
+      "name": "jwt.security.tokenRefreshInterval",
+      "type": "java.lang.Integer",
+      "sourceType": "com.github.security.configuration.JwtProperties",
+      "description": "token刷新时间"
+    }
+  ],
+  "hints": []
+}
