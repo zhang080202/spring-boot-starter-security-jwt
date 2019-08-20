@@ -25,7 +25,9 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationFa
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.Assert;
+import org.springframework.util.PathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.auth0.jwt.JWT;
@@ -34,6 +36,7 @@ import com.github.security.utils.JwtAuthenticationToken;
 
 /**
  * jwt认证过滤器
+ * 
  * @author zhangyf
  * @date 2019年8月16日
  */
@@ -47,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	private AuthenticationFailureHandler failureHandler = new SimpleUrlAuthenticationFailureHandler();
 
 	private RememberMeServices rememberMeServices = new NullRememberMeServices();
-	
+
 	private static final String AUTHORIZATION_HEADER = "Authorization";
 	private static final String AUTHORIZATION_START_STRING = "Bearer ";
 
@@ -70,15 +73,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
-		//验证请求头
-		if (!requiresAuthentication(request, response)) {
+		// 验证是否是白名单
+		if (permissiveRequest(request)) {
 			filterChain.doFilter(request, response);
 			return;
 		}
 		Authentication authResult = null;
 		AuthenticationException failed = null;
 		try {
-			//提取token 并委托给JwtAuthenticationProvider进行认证
+			// 提取token 并委托给JwtAuthenticationProvider进行认证
 			String token = getJwtToken(request);
 			if (StringUtils.isNotBlank(token)) {
 				JwtAuthenticationToken authToken = new JwtAuthenticationToken(JWT.decode(token));
@@ -108,7 +111,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
 			AuthenticationException failed) throws IOException, ServletException {
 		SecurityContextHolder.clearContext();
-		
+
 		rememberMeServices.loginFail(request, response);
 		failureHandler.onAuthenticationFailure(request, response, failed);
 	}
@@ -116,7 +119,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 			Authentication authResult) throws IOException, ServletException {
 		SecurityContextHolder.getContext().setAuthentication(authResult);
-		
+
 		rememberMeServices.loginSuccess(request, response, authResult);
 		successHandler.onAuthenticationSuccess(request, response, authResult);
 	}
@@ -159,7 +162,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		Assert.notNull(failureHandler, "failureHandler cannot be null");
 		this.failureHandler = failureHandler;
 	}
-
+	
 	protected AuthenticationSuccessHandler getSuccessHandler() {
 		return successHandler;
 	}

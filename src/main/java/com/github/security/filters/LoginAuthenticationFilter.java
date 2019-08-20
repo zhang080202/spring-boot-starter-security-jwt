@@ -64,10 +64,8 @@ public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingF
 		UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(
 				username, password);
 		
-		Authentication authenticate = this.getAuthenticationManager().authenticate(authRequest);
-		authenticate.setAuthenticated(false);
-		
-		return authenticate;
+		return this.getAuthenticationManager().authenticate(authRequest);
+//		authenticate.setAuthenticated(false);
 	}
 
 	protected String obtainPassword(String body) throws IOException {

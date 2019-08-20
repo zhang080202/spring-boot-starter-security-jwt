@@ -35,7 +35,6 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler{
         String token = generToken((UserDetails)authentication.getPrincipal(), salt);
         
 		jwtUserDetailsService.insertSalt(token, user);
-		System.out.println("token :" + token);
 		response.setHeader("Authorization", JwtUtils.TOKEN_PREFIX + token);
 	}
 	

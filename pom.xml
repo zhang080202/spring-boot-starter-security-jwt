@@ -12,7 +12,7 @@
 	<artifactId>springboot-security-jwt-starter</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>springboot-security-jwt-starter</name>
-	<description>Security JWT</description>
+	<description>Security JWT Starter</description>
 
 	<properties>
 		<java.version>1.8</java.version>
