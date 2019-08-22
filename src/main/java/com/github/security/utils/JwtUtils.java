@@ -85,10 +85,9 @@ public class JwtUtils {
      * @throws Exception
      */
     public static Jws<Claims> parseJWT(Key key, String token) {
-        // 移除 JWT 前的"Bearer "字符串
-    	token = StringUtils.substringAfter(token, TOKEN_PREFIX);
-        // 解析 JWT 字符串
-        return Jwts.parser().setSigningKey(key).parseClaimsJws(token);
+        return Jwts.parser()
+        		   .setSigningKey(key)
+        		   .parseClaimsJws(token);
     }
 
     /**
@@ -115,8 +114,7 @@ public class JwtUtils {
         SecretKey key = generateKey(salt);
         // 获取 JWT 的 payload 部分
         Claims claims = parseJWT(key, token).getBody();
-        
-        if (username.equals(claims.get(username).toString())) {
+        if (!username.equals(claims.getSubject())) {
 			throw new BadCredentialsException(" Jwt Verify fail");
 		}
     }

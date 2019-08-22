@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "jwt.security")
 public class JwtProperties {
 
-	private String permitUrls; //请求白名单
+	private String permitUrls; //请求白名单 以逗号分隔
 
 	private int tokenRefreshInterval; // token刷新时间
 

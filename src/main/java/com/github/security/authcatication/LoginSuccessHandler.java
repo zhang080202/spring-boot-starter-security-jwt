@@ -6,6 +6,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -30,9 +31,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler{
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
 			Authentication authentication) throws IOException, ServletException {
 		UserDetails user = (UserDetails)authentication.getPrincipal();
-		
-		String salt = jwtUserDetailsService.getSalt(user.getUsername());
-        String token = generToken((UserDetails)authentication.getPrincipal(), salt);
+        String token = generToken((UserDetails)authentication.getPrincipal(), getSalt(user.getUsername()));
         
 		jwtUserDetailsService.insertSalt(token, user);
 		response.setHeader("Authorization", JwtUtils.TOKEN_PREFIX + token);
@@ -42,4 +41,11 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler{
 		return JwtUtils.createToken(user.getUsername(), user.getAuthorities(), false, salt);
 	}
 	
+	private String getSalt(String username) {
+		String salt = jwtUserDetailsService.getSalt(username);
+		if (StringUtils.isBlank(salt)) {
+			salt = JwtUtils.TOKEN_SALT;
+		}
+		return salt;
+	}
 }

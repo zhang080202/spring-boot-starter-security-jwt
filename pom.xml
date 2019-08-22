@@ -10,9 +10,9 @@
 	</parent>
 	<groupId>com.github</groupId>
 	<artifactId>springboot-security-jwt-starter</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.1</version>
 	<name>springboot-security-jwt-starter</name>
-	<description>Security JWT Starter</description>
+	<description>Security Jwt</description>
 
 	<properties>
 		<java.version>1.8</java.version>

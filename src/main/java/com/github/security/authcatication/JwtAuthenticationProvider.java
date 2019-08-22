@@ -42,7 +42,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, Initia
 		Assert.notNull(jwt, "Jwt token is null");
 		//验证token是否过期
 		if(jwt.getExpiresAt().before(Calendar.getInstance().getTime()))
-			return null;
+			throw new BadCredentialsException("Jwt is expired");
 		
 		//从缓存或数据库中获取user对象
 		String username = jwt.getSubject();

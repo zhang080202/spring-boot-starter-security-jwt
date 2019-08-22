@@ -28,7 +28,7 @@ public class LoginConfigurer<T extends LoginConfigurer<T, B>, B extends HttpSecu
 		loginAuthenticationFilter.setJwtUserDetailsService(jwtUserDetailsService);
 		
 		loginAuthenticationFilter = postProcess(loginAuthenticationFilter);
-		builder.addFilterAfter(loginAuthenticationFilter, LogoutFilter.class);
+		builder.addFilterBefore(loginAuthenticationFilter, LogoutFilter.class);
 	}
 	
 	public LoginConfigurer<T, B> authenticationSuccessHandler(AuthenticationSuccessHandler successHandler){

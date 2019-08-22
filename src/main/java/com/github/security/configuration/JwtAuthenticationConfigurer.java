@@ -28,7 +28,7 @@ public class JwtAuthenticationConfigurer<T extends JwtAuthenticationConfigurer<T
 		authFilter.setAuthenticationFailureHandler(new JwtAuthenticationFailureHandler());
 		
 		authFilter = postProcess(authFilter);
-		builder.addFilterBefore(authFilter, LogoutFilter.class);
+		builder.addFilterAfter(authFilter, LogoutFilter.class);
 	}
 	
 	/**

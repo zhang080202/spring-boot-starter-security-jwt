@@ -11,10 +11,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -25,9 +27,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationFa
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.util.Assert;
-import org.springframework.util.PathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.auth0.jwt.JWT;
@@ -80,23 +80,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		}
 		Authentication authResult = null;
 		AuthenticationException failed = null;
-		try {
-			// 提取token 并委托给JwtAuthenticationProvider进行认证
-			String token = getJwtToken(request);
-			if (StringUtils.isNotBlank(token)) {
-				JwtAuthenticationToken authToken = new JwtAuthenticationToken(JWT.decode(token));
-				authResult = this.getAuthenticationManager().authenticate(authToken);
-			} else {
-				failed = new InsufficientAuthenticationException("JWT is Empty");
+		
+		//验证是否是登录状态
+		failed =  requireLogin();
+		if (failed == null) {
+			try {
+				// 提取token 并委托给JwtAuthenticationProvider进行认证
+				String token = getJwtToken(request);
+				if (StringUtils.isNotBlank(token)) {
+					JwtAuthenticationToken authToken = new JwtAuthenticationToken(JWT.decode(token));
+					authResult = this.getAuthenticationManager().authenticate(authToken);
+				} else {
+					failed = new InsufficientAuthenticationException("JWT is Empty");
+				}
+			} catch (JWTDecodeException e) {
+				logger.error("JWT format error", e);
+				failed = new InsufficientAuthenticationException("JWT format error", failed);
+			} catch (InternalAuthenticationServiceException e) {
+				logger.error("An internal error occurred while trying to authenticate the user.", failed);
+				failed = e;
+			} catch (AuthenticationException e) {
+				failed = e;
 			}
-		} catch (JWTDecodeException e) {
-			logger.error("JWT format error", e);
-			failed = new InsufficientAuthenticationException("JWT format error", failed);
-		} catch (InternalAuthenticationServiceException e) {
-			logger.error("An internal error occurred while trying to authenticate the user.", failed);
-			failed = e;
-		} catch (AuthenticationException e) {
-			failed = e;
 		}
 		if (authResult != null) {
 			successfulAuthentication(request, response, filterChain, authResult);
@@ -106,6 +111,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		}
 
 		filterChain.doFilter(request, response);
+	}
+
+	private AuthenticationException requireLogin() {
+		SecurityContext context = SecurityContextHolder.getContext();
+		if (context.getAuthentication() == null) {
+			return new BadCredentialsException("Login expired or logout");
+		}
+		return null;
 	}
 
 	protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
