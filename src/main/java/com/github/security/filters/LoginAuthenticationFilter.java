@@ -18,7 +18,6 @@ import org.springframework.util.StringUtils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.github.security.JwtUser;
 import com.github.security.service.JwtUserDetailsService;
 
 /**
