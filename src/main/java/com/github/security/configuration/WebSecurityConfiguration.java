@@ -121,7 +121,13 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	}
 	
 	String[] getPermitUrls() {
-		String urls = p.getPermitUrls() + DEFAULT_PERMITURL;
+		String urls = p.getPermitUrls() + "," + DEFAULT_PERMITURL;
+		
+		String[] strs = StringUtils.split(urls.trim(), ",");
+		for (int i = 0; i < strs.length; i++) {
+			strs[i] = strs[i].trim();
+		}
+		
 		return StringUtils.split(urls.trim(), ",");
 	}
 	
