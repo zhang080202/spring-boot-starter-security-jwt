@@ -51,8 +51,14 @@ public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingF
 			throws AuthenticationException, IOException, ServletException {
 		String body = StreamUtils.copyToString(request.getInputStream(), Charset.forName("UTF-8"));
 		
-		String username = obtainUsername(body);
-		String password = obtainPassword(body);
+		String username, password;
+		if (org.apache.commons.lang3.StringUtils.isBlank(body)) {
+			username = request.getParameter(usernameParameter);
+			password = request.getParameter(passwordParameter);
+		} else {
+			username = obtainUsername(body);
+			password = obtainPassword(body);
+		}
 		
 		if (username == null) 
 			username = "";
@@ -77,7 +83,7 @@ public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingF
 	protected String getStringFromRequest(String body, String key) throws IOException {
 		String result = null;
 		if(StringUtils.hasText(body) && !StringUtils.isEmpty(key)) {
-		    JSONObject jsonObj = JSON.parseObject(body);
+		    JSONObject jsonObj = JSON.parseObject(body.trim());
 		    result = jsonObj.getString(key);
 		}
 		return result;

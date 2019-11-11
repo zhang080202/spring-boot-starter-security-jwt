@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserCache;
@@ -28,6 +30,8 @@ import com.github.security.utils.JwtUtils;
  * @date 2019年8月16日
  */
 public class JwtRefreshSuccessHandler implements AuthenticationSuccessHandler{
+	
+	private Logger logger = LoggerFactory.getLogger(JwtRefreshSuccessHandler.class);
 	
 	private int tokenRefreshInterval; //如果不配置则默认不开启token刷新功能
 	
@@ -60,6 +64,8 @@ public class JwtRefreshSuccessHandler implements AuthenticationSuccessHandler{
             jwtUserDetailsService.insertSalt(newToken, user);
             
             response.setHeader("Authorization", newToken);
+            
+            logger.info("token refresh, new token : " + newToken);
         }	
 	}
 	

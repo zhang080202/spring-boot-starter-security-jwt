@@ -7,6 +7,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -23,6 +25,8 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler{
 	
 	private JwtUserDetailsService jwtUserDetailsService;
 	
+	private Logger logger = LoggerFactory.getLogger(LoginSuccessHandler.class);
+	
 	public LoginSuccessHandler(JwtUserDetailsService jwtUserDetailsService) {
 		this.jwtUserDetailsService = jwtUserDetailsService;
 	}
@@ -35,6 +39,8 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler{
         
 		jwtUserDetailsService.insertSalt(token, user);
 		response.setHeader("Authorization", JwtUtils.TOKEN_PREFIX + token);
+		
+		logger.info("Login success! token : " + token);
 	}
 	
 	private String generToken(UserDetails user, String salt) {
