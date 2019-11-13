@@ -140,6 +140,7 @@ public class JwtWebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	@Bean
 	protected CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
+		configuration.setAllowCredentials(true);
 		configuration.setAllowedOrigins(Arrays.asList("*"));
 		configuration.setAllowedMethods(Arrays.asList("GET","POST","DELETE","PUT","HEAD", "OPTION"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));

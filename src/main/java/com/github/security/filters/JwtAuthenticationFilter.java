@@ -67,6 +67,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	protected String getJwtToken(HttpServletRequest request) {
 		String authInfo = request.getHeader(AUTHORIZATION_HEADER);
+		if (StringUtils.isBlank(authInfo)) {
+			throw new BadCredentialsException("token must not be empty");
+		}
 		return StringUtils.removeStart(authInfo, AUTHORIZATION_START_STRING);
 	}
 
@@ -81,28 +84,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		Authentication authResult = null;
 		AuthenticationException failed = null;
 		
-		//验证是否是登录状态
-		failed =  requireLogin();
-		if (failed == null) {
-			try {
-				// 提取token 并委托给JwtAuthenticationProvider进行认证
-				String token = getJwtToken(request);
-				if (StringUtils.isNotBlank(token)) {
-					JwtAuthenticationToken authToken = new JwtAuthenticationToken(JWT.decode(token));
-					authResult = this.getAuthenticationManager().authenticate(authToken);
-				} else {
-					failed = new InsufficientAuthenticationException("JWT is Empty");
-				}
-			} catch (JWTDecodeException e) {
-				logger.error("JWT format error", e);
-				failed = new InsufficientAuthenticationException("JWT format error", failed);
-			} catch (InternalAuthenticationServiceException e) {
-				logger.error("An internal error occurred while trying to authenticate the user.", failed);
-				failed = e;
-			} catch (AuthenticationException e) {
-				failed = e;
+		try {
+			// 提取token 并委托给JwtAuthenticationProvider进行认证
+			String token = getJwtToken(request);
+			if (StringUtils.isNotBlank(token)) {
+				JwtAuthenticationToken authToken = new JwtAuthenticationToken(JWT.decode(token));
+				authResult = this.getAuthenticationManager().authenticate(authToken);
+			} else {
+				failed = new InsufficientAuthenticationException("JWT is Empty");
 			}
+		} catch (JWTDecodeException e) {
+			logger.error("JWT format error", e);
+			failed = new InsufficientAuthenticationException("JWT format error", failed);
+		} catch (InternalAuthenticationServiceException e) {
+			logger.error("An internal error occurred while trying to authenticate the user.", failed);
+			failed = e;
+		} catch (AuthenticationException e) {
+			failed = e;
 		}
+		
 		if (authResult != null) {
 			successfulAuthentication(request, response, filterChain, authResult);
 		} else if (!permissiveRequest(request)) {
@@ -111,14 +111,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		}
 
 		filterChain.doFilter(request, response);
-	}
-
-	private AuthenticationException requireLogin() {
-		SecurityContext context = SecurityContextHolder.getContext();
-		if (context.getAuthentication() == null) {
-			return new BadCredentialsException("Login expired or logout");
-		}
-		return null;
 	}
 
 	protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
