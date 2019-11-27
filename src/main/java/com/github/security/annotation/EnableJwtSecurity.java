@@ -19,7 +19,7 @@ import com.github.security.configuration.JwtWebSecurityConfiguration;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-@Import({JwtWebSecurityConfiguration.class, JwtProperties.class})
+@Import({ JwtWebSecurityConfiguration.class, JwtProperties.class })
 public @interface EnableJwtSecurity {
 
 }

@@ -1,9 +1,7 @@
 package com.github.security.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
 @ConfigurationProperties(prefix = "jwt.security")
 public class JwtProperties {
 

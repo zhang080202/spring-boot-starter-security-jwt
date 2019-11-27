@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +24,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import com.github.security.authcatication.JwtAuthenticationFailureHandler;
 import com.github.security.authcatication.JwtAuthenticationProvider;
 import com.github.security.authcatication.JwtRefreshSuccessHandler;
 import com.github.security.authcatication.LoginSuccessHandler;
@@ -34,6 +34,7 @@ import com.github.security.service.JwtUserDetailsService;
 
 @Configuration
 @EnableWebSecurity
+@ConditionalOnMissingBean
 public class JwtWebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	
 	@Autowired
@@ -47,6 +48,9 @@ public class JwtWebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	
 	@Autowired
 	private LoginSuccessHandler loginSuccessHandler;
+	
+	@Autowired
+	private JwtAuthenticationFailureHandler jwtAuthenticationFailureHandler;
 	
 	private static final String DEFAULT_PERMITURL = "/login/**,/logout/**";
 
@@ -78,9 +82,11 @@ public class JwtWebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 		    .and()
 		    .addFilterAfter(new OptionsRequestFilter(), CorsFilter.class)
 		    .apply(new LoginConfigurer<>(userDetailsService)).authenticationSuccessHandler(loginSuccessHandler)
+		    											     .authenticationFailureHandler(jwtAuthenticationFailureHandler)
 		    .and()
 		    .apply(new JwtAuthenticationConfigurer<>())
 		    	.authenticationSuccessHandler(jwtRefreshSuccessHandler())
+		    	.authenticationFailureHandler(jwtAuthenticationFailureHandler)
 		    	.permissiveRequestUrls(getPermitUrls())
 		    .and()
 		    .logout()
@@ -109,6 +115,7 @@ public class JwtWebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	}
 	
 	@Bean
+	@ConditionalOnMissingBean(JwtRefreshSuccessHandler.class)
 	protected JwtRefreshSuccessHandler jwtRefreshSuccessHandler() {
 		JwtRefreshSuccessHandler refreshSuccessHandler = new JwtRefreshSuccessHandler(userDetailsService);
 		refreshSuccessHandler.setTokenRefreshInterval(p.getTokenRefreshInterval());
@@ -122,6 +129,13 @@ public class JwtWebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	}
 	
 	@Bean
+	@ConditionalOnMissingBean(JwtAuthenticationFailureHandler.class)
+	public JwtAuthenticationFailureHandler jJwtAuthenticationFailureHandler() {
+		return new JwtAuthenticationFailureHandler();
+	}
+	
+	@Bean
+	@ConditionalOnMissingBean(TokenClearLogoutHandler.class)
 	public TokenClearLogoutHandler tokenClearLogoutHandler() {
 		return new TokenClearLogoutHandler(userDetailsService);
 	}

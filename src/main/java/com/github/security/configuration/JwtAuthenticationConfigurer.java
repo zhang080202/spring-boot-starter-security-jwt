@@ -25,7 +25,6 @@ public class JwtAuthenticationConfigurer<T extends JwtAuthenticationConfigurer<T
 	@Override
 	public void configure(B builder) throws Exception {
 		authFilter.setAuthenticationManager(builder.getSharedObject(AuthenticationManager.class));
-		authFilter.setAuthenticationFailureHandler(new JwtAuthenticationFailureHandler());
 		
 		authFilter = postProcess(authFilter);
 		builder.addFilterAfter(authFilter, LogoutFilter.class);
@@ -48,6 +47,11 @@ public class JwtAuthenticationConfigurer<T extends JwtAuthenticationConfigurer<T
 	 */
 	public JwtAuthenticationConfigurer<T, B> authenticationSuccessHandler(AuthenticationSuccessHandler successHandler){
 		authFilter.setAuthenticationSuccessHandler(successHandler);
+		return this;
+	}
+	
+	public JwtAuthenticationConfigurer<T, B> authenticationFailureHandler(JwtAuthenticationFailureHandler failureHandler){
+		authFilter.setAuthenticationFailureHandler(failureHandler);
 		return this;
 	}
 }

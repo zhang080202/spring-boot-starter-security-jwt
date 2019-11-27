@@ -10,29 +10,34 @@ import com.github.security.authcatication.JwtAuthenticationFailureHandler;
 import com.github.security.filters.LoginAuthenticationFilter;
 import com.github.security.service.JwtUserDetailsService;
 
+public class LoginConfigurer<T extends LoginConfigurer<T, B>, B extends HttpSecurityBuilder<B>>
+		extends AbstractHttpConfigurer<T, B> {
 
-public class LoginConfigurer<T extends LoginConfigurer<T, B>, B extends HttpSecurityBuilder<B>> extends AbstractHttpConfigurer<T, B> {
-	
 	private LoginAuthenticationFilter loginAuthenticationFilter;
+
 	private JwtUserDetailsService jwtUserDetailsService;
-	
+
 	public LoginConfigurer(JwtUserDetailsService jwtUserDetailsService) {
 		loginAuthenticationFilter = new LoginAuthenticationFilter();
 		this.jwtUserDetailsService = jwtUserDetailsService;
 	}
-	
+
 	@Override
 	public void configure(B builder) throws Exception {
 		loginAuthenticationFilter.setAuthenticationManager(builder.getSharedObject(AuthenticationManager.class));
-		loginAuthenticationFilter.setAuthenticationFailureHandler(new JwtAuthenticationFailureHandler());
 		loginAuthenticationFilter.setJwtUserDetailsService(jwtUserDetailsService);
-		
+
 		loginAuthenticationFilter = postProcess(loginAuthenticationFilter);
 		builder.addFilterBefore(loginAuthenticationFilter, LogoutFilter.class);
 	}
-	
-	public LoginConfigurer<T, B> authenticationSuccessHandler(AuthenticationSuccessHandler successHandler){
+
+	public LoginConfigurer<T, B> authenticationSuccessHandler(AuthenticationSuccessHandler successHandler) {
 		loginAuthenticationFilter.setAuthenticationSuccessHandler(successHandler);
+		return this;
+	}
+
+	public LoginConfigurer<T, B> authenticationFailureHandler(JwtAuthenticationFailureHandler jwtAuthenticationFailureHandler) {
+		loginAuthenticationFilter.setAuthenticationFailureHandler(jwtAuthenticationFailureHandler);
 		return this;
 	}
 
