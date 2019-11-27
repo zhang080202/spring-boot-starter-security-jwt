@@ -27,7 +27,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 public class JwtUtils {
 	public static final String	TOKEN_HEADER		= "Authorization";
 	public static final String	TOKEN_PREFIX		= "Bearer ";
-	public static final String  TOKEN_SALT          = "jwtStater";
+	public static final String  TOKEN_SALT          = "jwtStarter";
 
 	private static final String	ISS					= "echisan";
 	private static final String	ROLE_CLAIMS			= "rol";
