@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.github</groupId>
 	<artifactId>spring-boot-starter-security-jwt</artifactId>
-	<version>1.0.5</version>
+	<version>1.0.5.RELEASE</version>
 	<name>springboot-security-jwt-starter</name>
 	<description>Security Jwt</description>
 
