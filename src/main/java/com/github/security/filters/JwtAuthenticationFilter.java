@@ -91,11 +91,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				JwtAuthenticationToken authToken = new JwtAuthenticationToken(JWT.decode(token));
 				authResult = this.getAuthenticationManager().authenticate(authToken);
 			} else {
-				failed = new InsufficientAuthenticationException("JWT is Empty");
+				failed = new BadCredentialsException("JWT is Empty");
 			}
 		} catch (JWTDecodeException e) {
 			logger.error("JWT format error", e);
-			failed = new InsufficientAuthenticationException("JWT format error", failed);
+			failed = new BadCredentialsException("JWT format error", failed);
 		} catch (InternalAuthenticationServiceException e) {
 			logger.error("An internal error occurred while trying to authenticate the user.", failed);
 			failed = e;

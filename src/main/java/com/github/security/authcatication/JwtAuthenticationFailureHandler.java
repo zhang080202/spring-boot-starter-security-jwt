@@ -9,8 +9,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+
+import com.github.security.exception.JwtExpireException;
+import com.github.security.exception.JwtVerificationFailedException;
 
 public class JwtAuthenticationFailureHandler implements AuthenticationFailureHandler{
 	
@@ -22,9 +26,15 @@ public class JwtAuthenticationFailureHandler implements AuthenticationFailureHan
 		response.setContentType("Application/json");
 		response.setCharacterEncoding("UTF-8");
 		response.setStatus(HttpStatus.UNAUTHORIZED.value());
-		response.getWriter().print(exception.getMessage());
+		
+		if (exception instanceof BadCredentialsException) {
+			response.getWriter().print("用户名或密码错误");
+		} else if (exception instanceof JwtVerificationFailedException) {
+			response.getWriter().print("token 验证失败");
+		} else if (exception instanceof JwtExpireException) {
+			response.getWriter().print("登录过期，请重新登录");
+		}
 		
 		logger.error(exception.getMessage());
-	}
-	
+	}	
 }

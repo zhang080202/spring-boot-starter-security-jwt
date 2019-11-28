@@ -5,7 +5,6 @@ import java.util.Calendar;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserCache;
@@ -14,6 +13,7 @@ import org.springframework.security.core.userdetails.cache.NullUserCache;
 import org.springframework.util.Assert;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.security.exception.JwtExpireException;
 import com.github.security.service.JwtUserDetailsService;
 import com.github.security.utils.JwtAuthenticationToken;
 import com.github.security.utils.JwtUtils;
@@ -42,7 +42,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, Initia
 		Assert.notNull(jwt, "Jwt token is null");
 		//验证token是否过期
 		if(jwt.getExpiresAt().before(Calendar.getInstance().getTime()))
-			throw new BadCredentialsException("Jwt is expired");
+			throw new JwtExpireException("Jwt is expired");
 		
 		//从缓存或数据库中获取user对象
 		String username = jwt.getSubject();
@@ -58,7 +58,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, Initia
 		try {
 			JwtUtils.checkJWT(jwt.getToken(), salt, username);
         } catch (Exception e) {
-            throw new BadCredentialsException("Jwt verify fail", e);
+            throw new JwtExpireException("Jwt verify fail", e);
         }
 		
 		JwtAuthenticationToken token = new JwtAuthenticationToken(user, jwt, user.getAuthorities());
