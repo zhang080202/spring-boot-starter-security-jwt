@@ -16,7 +16,7 @@ import com.github.security.annotation.EnableJwtSecurity;
 @Configuration
 @ConditionalOnClass({ EnableJwtSecurity.class })
 @EnableConfigurationProperties({ JwtProperties.class })
-@Import({ JwtWebSecurityConfiguration.class })
+@Import({ JwtWebSecurityConfiguration.class, JwtConfiguration.class })
 public class JwtAutoConfiguration {
 
 }
