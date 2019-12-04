@@ -6,8 +6,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 
-import com.github.security.authcatication.JwtAuthenticationFailureHandler;
 import com.github.security.filters.JwtAuthenticationFilter;
+import com.github.security.handler.JwtAuthenticationFailureHandler;
 
 /**
  * Jwt 认证 配置器

@@ -1,16 +1,11 @@
 package com.github.security.utils;
 
-import java.security.Key;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
@@ -19,41 +14,36 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 
 /**
  * jwt 工具类
  *
  */
 public class JwtUtils {
-	public static final String	TOKEN_HEADER		= "Authorization";
-	public static final String	TOKEN_PREFIX		= "Bearer ";
-	public static final String  TOKEN_SALT          = "jwtStarter";
+	//default secret String
+	public static final String  TOKEN_SECRET          = "NsTheJM9ckeYl1cNpW5TQMqxfapDcJDrcSlRBlLNBKw=";
 
-	private static final String	ISS					= "echisan";
 	private static final String	ROLE_CLAIMS			= "rol";
 	
 	private static final SignatureAlgorithm JWT_ALG = SignatureAlgorithm.HS256;
-	// 过期时间是3600秒，既是1个小时
-	private static final long	EXPIRATION			= 3600L;
-
-	// 选择了记住我之后的过期时间为7天
-	private static final long	EXPIRATION_REMEMBER	= 604800L;
+	// 过期时间2个小时
+	private static final long	EXPIRATION			= 7200L;
 
 	// 创建token
-	public static String createToken(String username, Collection<? extends GrantedAuthority> authorities, boolean isRememberMe, String salt) {
+	public static String createToken(String username, Collection<? extends GrantedAuthority> authorities, String salt) {
 		List<String> roles = authorities.stream()
 										.map((auth) -> auth.getAuthority())
 										.collect(Collectors.toList());
-		long expiration = isRememberMe ? EXPIRATION_REMEMBER : EXPIRATION;
+		
 		HashMap<String, Object> map = new HashMap<>();
 		map.put(ROLE_CLAIMS, StringUtils.join(roles, ","));
 		return Jwts.builder()
-				   .signWith(JWT_ALG, salt)
+				   .signWith(Keys.hmacShaKeyFor(salt.getBytes()), JWT_ALG)
 				   .setClaims(map)
-				   .setIssuer(ISS)
 				   .setSubject(username)
 				   .setIssuedAt(new Date())
-				   .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000))
+				   .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION * 1000))
 				   .compact();
 	}
 
@@ -73,7 +63,10 @@ public class JwtUtils {
 	}
 
 	private static Claims getTokenBody(String token, String salt) {
-		return Jwts.parser().setSigningKey(salt).parseClaimsJws(token).getBody();
+		return Jwts.parser()
+				   .setSigningKey(salt)
+				   .parseClaimsJws(token)
+				   .getBody();
 	}
 	
 	/**
@@ -84,26 +77,12 @@ public class JwtUtils {
      * @return {@link Jws}
      * @throws Exception
      */
-    public static Jws<Claims> parseJWT(Key key, String token) {
+    public static Jws<Claims> parseJWT(String salt, String token) {
         return Jwts.parser()
-        		   .setSigningKey(key)
+        		   .setSigningKey(salt.getBytes())
         		   .parseClaimsJws(token);
     }
 
-    /**
-     * 使用指定密钥生成规则，生成JWT加解密密钥
-     *
-     * @param alg  加解密类型
-     * @param rule 密钥生成规则
-     * @return
-     */
-    public static SecretKey generateKey(String salt) {
-        // 将密钥生成键转换为字节数组
-        byte[] bytes = Base64.decodeBase64(salt);
-        // 根据指定的加密方式，生成密钥
-        return new SecretKeySpec(bytes, JWT_ALG.getJcaName());
-    }
-    
     /**
      * 校验JWT
      *
@@ -111,11 +90,10 @@ public class JwtUtils {
      * @return ture or false
      */
     public static void checkJWT(String token, String salt, String username) {
-        SecretKey key = generateKey(salt);
         // 获取 JWT 的 payload 部分
-        Claims claims = parseJWT(key, token).getBody();
+        Claims claims = parseJWT(salt, token).getBody();
         if (!username.equals(claims.getSubject())) {
-			throw new BadCredentialsException(" Jwt Verify fail");
+			throw new BadCredentialsException(JwtConstant.TOKEN_VERIFY_ERROR);
 		}
     }
 

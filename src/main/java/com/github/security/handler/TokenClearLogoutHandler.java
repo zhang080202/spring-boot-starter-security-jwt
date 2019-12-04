@@ -1,4 +1,4 @@
-package com.github.security.authcatication;
+package com.github.security.handler;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

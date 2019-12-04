@@ -2,7 +2,6 @@ package com.github.security.configuration;
 
 import java.util.Arrays;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -10,7 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
@@ -18,16 +16,17 @@ import org.springframework.security.web.header.Header;
 import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.filter.CorsFilter;
 
-import com.github.security.authcatication.JwtAuthenticationFailureHandler;
-import com.github.security.authcatication.JwtRefreshSuccessHandler;
-import com.github.security.authcatication.LoginSuccessHandler;
-import com.github.security.authcatication.TokenClearLogoutHandler;
 import com.github.security.filters.OptionsRequestFilter;
+import com.github.security.handler.JwtAuthenticationFailureHandler;
+import com.github.security.handler.JwtRefreshSuccessHandler;
+import com.github.security.handler.LoginSuccessHandler;
+import com.github.security.handler.LogoutBlacklistHandler;
+import com.github.security.handler.TokenClearLogoutHandler;
 import com.github.security.service.JwtUserDetailsService;
 
 @Configuration
 @EnableWebSecurity
-@ConditionalOnMissingBean
+@ConditionalOnMissingBean(JwtWebSecurityConfiguration.class)
 public class JwtWebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	
 	@Autowired
@@ -49,6 +48,9 @@ public class JwtWebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	
 	@Autowired
 	private TokenClearLogoutHandler tokenClearLogoutHandler;
+	
+	@Autowired
+	private LogoutBlacklistHandler logoutBlacklistHandler;
 	
 	@Autowired
 	private JwtRefreshSuccessHandler jwtRefreshSuccessHandler;
@@ -84,10 +86,11 @@ public class JwtWebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 		    .apply(new JwtAuthenticationConfigurer<>())
 		    	.authenticationSuccessHandler(jwtRefreshSuccessHandler)
 		    	.authenticationFailureHandler(jwtAuthenticationFailureHandler)
-		    	.permissiveRequestUrls(getPermitUrls())
+		    	.permissiveRequestUrls(jwtConfiguration.getPermitUrls())
 		    .and()
 		    .logout()
 		        .addLogoutHandler(tokenClearLogoutHandler)
+		        .addLogoutHandler(logoutBlacklistHandler)
 		        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler())
 		    .and()
 		    .sessionManagement().disable();

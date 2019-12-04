@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 
 import org.springframework.context.annotation.Import;
 
-import com.github.security.configuration.JwtProperties;
+import com.github.security.configuration.JwtConfiguration;
 import com.github.security.configuration.JwtWebSecurityConfiguration;
 
 /**
@@ -19,7 +19,7 @@ import com.github.security.configuration.JwtWebSecurityConfiguration;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-@Import({ JwtWebSecurityConfiguration.class, JwtProperties.class })
+@Import({ JwtWebSecurityConfiguration.class, JwtConfiguration.class })
 public @interface EnableJwtSecurity {
 
 }

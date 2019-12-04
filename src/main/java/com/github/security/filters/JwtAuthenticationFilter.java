@@ -12,14 +12,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.NullRememberMeServices;
-import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -30,7 +27,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.github.security.exception.JwtExpireException;
+import com.github.security.utils.CacheManager;
 import com.github.security.utils.JwtAuthenticationToken;
+import com.github.security.utils.JwtConstant;
 
 /**
  * jwt认证过滤器
@@ -47,28 +47,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	private AuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
 	private AuthenticationFailureHandler failureHandler = new SimpleUrlAuthenticationFailureHandler();
 
-	private RememberMeServices rememberMeServices = new NullRememberMeServices();
-
-	private static final String AUTHORIZATION_HEADER = "Authorization";
-	private static final String AUTHORIZATION_START_STRING = "Bearer ";
-
 	public JwtAuthenticationFilter() {
-		this.requiresAuthenticationRequestMatcher = new RequestHeaderRequestMatcher(AUTHORIZATION_HEADER);
+		this.requiresAuthenticationRequestMatcher = new RequestHeaderRequestMatcher(JwtConstant.AUTHORIZATION_HEADER);
 	}
 
 	@Override
 	public void afterPropertiesSet() {
-		Assert.notNull(authenticationManager, "authenticationManager must be specified");
+		Assert.notNull(authenticationManager, "AuthenticationManager must be specified");
 		Assert.notNull(successHandler, "AuthenticationSuccessHandler must be specified");
 		Assert.notNull(failureHandler, "AuthenticationFailureHandler must be specified");
 	}
 
 	protected String getJwtToken(HttpServletRequest request) {
-		String authInfo = request.getHeader(AUTHORIZATION_HEADER);
+		String authInfo = request.getHeader(JwtConstant.AUTHORIZATION_HEADER);
 		if (StringUtils.isBlank(authInfo)) {
-			throw new BadCredentialsException("token must not be empty");
+			throw new BadCredentialsException(JwtConstant.TOKEN_NOT_EMPTY);
 		}
-		return StringUtils.removeStart(authInfo, AUTHORIZATION_START_STRING);
+		return StringUtils.removeStart(authInfo, JwtConstant.AUTHORIZATION_START_STRING);
 	}
 
 	@Override
@@ -79,24 +74,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			filterChain.doFilter(request, response);
 			return;
 		}
+		
 		Authentication authResult = null;
 		AuthenticationException failed = null;
 		
+		
 		try {
-			// 提取token 并委托给JwtAuthenticationProvider进行认证
-			String token = getJwtToken(request);
-			if (StringUtils.isNotBlank(token)) {
-				JwtAuthenticationToken authToken = new JwtAuthenticationToken(JWT.decode(token));
-				authResult = this.getAuthenticationManager().authenticate(authToken);
+			// 验证是否在黑名单中
+			if (checkIsBlacklist(request)) {
+				failed = new JwtExpireException(JwtConstant.TOKEN_EXPIRE);
 			} else {
-				failed = new BadCredentialsException("JWT is Empty");
+				// 提取token 并委托给JwtAuthenticationProvider进行认证
+				String token = getJwtToken(request);
+				if (StringUtils.isNotBlank(token)) {
+					JwtAuthenticationToken authToken = new JwtAuthenticationToken(JWT.decode(token));
+					authResult = this.getAuthenticationManager().authenticate(authToken);
+				} else {
+					failed = new BadCredentialsException(JwtConstant.TOKEN_NOT_EMPTY);
+				}
 			}
 		} catch (JWTDecodeException e) {
-			logger.error("JWT format error", e);
-			failed = new BadCredentialsException("JWT format error", failed);
-		} catch (InternalAuthenticationServiceException e) {
-			logger.error("An internal error occurred while trying to authenticate the user.", failed);
-			failed = e;
+			failed = new BadCredentialsException(JwtConstant.TOKEN_FORMAT_ERROR, failed);
 		} catch (AuthenticationException e) {
 			failed = e;
 		}
@@ -111,11 +109,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		filterChain.doFilter(request, response);
 	}
 
+	private boolean checkIsBlacklist(HttpServletRequest request) {
+		boolean isBlack = false;
+		String token = getJwtToken(request);
+		Object data = CacheManager.getData(token);
+		
+		if (data != null) {
+			isBlack = true;
+		}
+		return isBlack;
+	}
+
 	protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
 			AuthenticationException failed) throws IOException, ServletException {
 		SecurityContextHolder.clearContext();
 
-		rememberMeServices.loginFail(request, response);
 		failureHandler.onAuthenticationFailure(request, response, failed);
 	}
 
@@ -123,7 +131,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			Authentication authResult) throws IOException, ServletException {
 		SecurityContextHolder.getContext().setAuthentication(authResult);
 
-		rememberMeServices.loginSuccess(request, response, authResult);
 		successHandler.onAuthenticationSuccess(request, response, authResult);
 	}
 
@@ -172,14 +179,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	protected AuthenticationFailureHandler getFailureHandler() {
 		return failureHandler;
-	}
-
-	public RememberMeServices getRememberMeServices() {
-		return rememberMeServices;
-	}
-
-	public void setRememberMeServices(RememberMeServices rememberMeServices) {
-		this.rememberMeServices = rememberMeServices;
 	}
 
 }

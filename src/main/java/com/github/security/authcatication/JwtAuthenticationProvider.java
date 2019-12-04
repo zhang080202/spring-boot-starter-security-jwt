@@ -7,15 +7,14 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.cache.NullUserCache;
 import org.springframework.util.Assert;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.security.exception.JwtExpireException;
 import com.github.security.service.JwtUserDetailsService;
 import com.github.security.utils.JwtAuthenticationToken;
+import com.github.security.utils.JwtConstant;
 import com.github.security.utils.JwtUtils;
 
 /**
@@ -27,38 +26,33 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, Initia
 	
 	private JwtUserDetailsService userDetailsService;
 	
-	private UserCache userCache = new NullUserCache();
-	
-
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		Assert.notNull(this.userCache, "A user cache must be set");
 		Assert.notNull(this.userDetailsService, "A UserDetailsService must be set");
 	}
 	
 	@Override
 	public Authentication authenticate(Authentication authentication) throws AuthenticationException {
 		DecodedJWT jwt = ((JwtAuthenticationToken) authentication).getToken();
-		Assert.notNull(jwt, "Jwt token is null");
+		Assert.notNull(jwt, JwtConstant.TOKEN_NOT_EMPTY);
 		//验证token是否过期
 		if(jwt.getExpiresAt().before(Calendar.getInstance().getTime()))
-			throw new JwtExpireException("Jwt is expired");
+			throw new JwtExpireException(JwtConstant.TOKEN_EXPIRE);
 		
 		//从缓存或数据库中获取user对象
 		String username = jwt.getSubject();
-		UserDetails user = userCache.getUserFromCache(username);
 		
+		UserDetails user = userDetailsService.loadUserByUsername(username);
 		if (user == null) {
-			user = userDetailsService.loadUserByUsername(username);
-			if (user == null) {
-				return null;
-			}
+			return null;
 		}
+		
 		String salt = getSalt(username);
 		try {
 			JwtUtils.checkJWT(jwt.getToken(), salt, username);
         } catch (Exception e) {
-            throw new JwtExpireException("Jwt verify fail", e);
+        	e.printStackTrace();
+            throw new JwtExpireException(JwtConstant.TOKEN_VERIFY_ERROR, e);
         }
 		
 		JwtAuthenticationToken token = new JwtAuthenticationToken(user, jwt, user.getAuthorities());
@@ -74,14 +68,10 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, Initia
 		this.userDetailsService = userDetailsService;
 	}
 
-	public void setUserCache(UserCache userCache) {
-		this.userCache = userCache;
-	}
-	
 	protected String getSalt(String username) {
 		String salt = userDetailsService.getSalt(username);
 		if (StringUtils.isBlank(salt)) {
-			salt = JwtUtils.TOKEN_SALT;
+			salt = JwtUtils.TOKEN_SECRET;
 		}
 		return salt;
 	}

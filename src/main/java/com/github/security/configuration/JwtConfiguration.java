@@ -11,20 +11,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.github.security.authcatication.JwtAuthenticationFailureHandler;
 import com.github.security.authcatication.JwtAuthenticationProvider;
-import com.github.security.authcatication.JwtRefreshSuccessHandler;
-import com.github.security.authcatication.LoginSuccessHandler;
-import com.github.security.authcatication.TokenClearLogoutHandler;
+import com.github.security.handler.JwtAuthenticationFailureHandler;
+import com.github.security.handler.JwtRefreshSuccessHandler;
+import com.github.security.handler.LoginSuccessHandler;
+import com.github.security.handler.LogoutBlacklistHandler;
+import com.github.security.handler.TokenClearLogoutHandler;
 import com.github.security.service.JwtUserDetailsService;
 
 @Configuration
+@ConditionalOnMissingBean(JwtConfiguration.class)
 @AutoConfigureBefore({ JwtWebSecurityConfiguration.class })
 public class JwtConfiguration implements InitializingBean {
 	
@@ -36,13 +37,10 @@ public class JwtConfiguration implements InitializingBean {
 	@Autowired
 	private JwtProperties p;
 	
-	@Autowired(required = false)
-	private UserCache userCache;
-	
 	public String[] permitUrl;
 	
 	@Bean
-	@ConditionalOnMissingBean(JwtRefreshSuccessHandler.class)
+	@ConditionalOnMissingBean
 	protected JwtRefreshSuccessHandler jwtRefreshSuccessHandler() {
 		JwtRefreshSuccessHandler refreshSuccessHandler = new JwtRefreshSuccessHandler(userDetailsService);
 		refreshSuccessHandler.setTokenRefreshInterval(p.getTokenRefreshInterval());
@@ -50,21 +48,27 @@ public class JwtConfiguration implements InitializingBean {
 	}
 	
 	@Bean 
-	@ConditionalOnMissingBean(LoginSuccessHandler.class)
+	@ConditionalOnMissingBean
 	public LoginSuccessHandler loginSuccessHandler() {
 		return new LoginSuccessHandler(userDetailsService);
 	}
 	
 	@Bean
-	@ConditionalOnMissingBean(JwtAuthenticationFailureHandler.class)
+	@ConditionalOnMissingBean
 	public JwtAuthenticationFailureHandler jJwtAuthenticationFailureHandler() {
 		return new JwtAuthenticationFailureHandler();
 	}
 	
 	@Bean
-	@ConditionalOnMissingBean(TokenClearLogoutHandler.class)
+	@ConditionalOnMissingBean
 	public TokenClearLogoutHandler tokenClearLogoutHandler() {
 		return new TokenClearLogoutHandler(userDetailsService);
+	}
+	
+	@Bean
+	@ConditionalOnMissingBean
+	public LogoutBlacklistHandler logoutBlacklistHandler() {
+		return new LogoutBlacklistHandler();
 	}
 	
 	
@@ -72,9 +76,6 @@ public class JwtConfiguration implements InitializingBean {
 	public AuthenticationProvider getJwtAuthenticationProvider() {
 		JwtAuthenticationProvider authenticationProvider = new JwtAuthenticationProvider();
 		authenticationProvider.setUserDetailsService(userDetailsService);
-		if (userCache != null) {
-			authenticationProvider.setUserCache(userCache);
-		}
 		return authenticationProvider;
 	}
 	
@@ -98,10 +99,6 @@ public class JwtConfiguration implements InitializingBean {
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
 		return source;
-	}
-	
-	public void setUserCache(UserCache userCache) {
-		this.userCache = userCache;
 	}
 
 	@Override

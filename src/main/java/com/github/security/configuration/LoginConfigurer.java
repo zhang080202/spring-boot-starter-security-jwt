@@ -6,8 +6,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 
-import com.github.security.authcatication.JwtAuthenticationFailureHandler;
 import com.github.security.filters.LoginAuthenticationFilter;
+import com.github.security.handler.JwtAuthenticationFailureHandler;
 import com.github.security.service.JwtUserDetailsService;
 
 public class LoginConfigurer<T extends LoginConfigurer<T, B>, B extends HttpSecurityBuilder<B>>

@@ -1,4 +1,4 @@
-package com.github.security.authcatication;
+package com.github.security.handler;
 
 import java.io.IOException;
 
@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 import com.github.security.service.JwtUserDetailsService;
+import com.github.security.utils.JwtConstant;
 import com.github.security.utils.JwtUtils;
 
 /**
@@ -38,19 +39,19 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler{
         String token = generToken((UserDetails)authentication.getPrincipal(), getSalt(user.getUsername()));
         
 		jwtUserDetailsService.insertSalt(token, user);
-		response.setHeader("Authorization", JwtUtils.TOKEN_PREFIX + token);
+		response.setHeader(JwtConstant.AUTHORIZATION_HEADER, JwtConstant.AUTHORIZATION_START_STRING + token);
 		
 		logger.info("Login success! token : " + token);
 	}
 	
 	private String generToken(UserDetails user, String salt) {
-		return JwtUtils.createToken(user.getUsername(), user.getAuthorities(), false, salt);
+		return JwtUtils.createToken(user.getUsername(), user.getAuthorities(), salt);
 	}
 	
 	private String getSalt(String username) {
 		String salt = jwtUserDetailsService.getSalt(username);
 		if (StringUtils.isBlank(salt)) {
-			salt = JwtUtils.TOKEN_SALT;
+			salt = JwtUtils.TOKEN_SECRET;
 		}
 		return salt;
 	}

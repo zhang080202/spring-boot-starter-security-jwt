@@ -1,4 +1,4 @@
-package com.github.security.authcatication;
+package com.github.security.handler;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -21,6 +21,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.security.service.JwtUserDetailsService;
 import com.github.security.utils.JwtAuthenticationToken;
+import com.github.security.utils.JwtConstant;
 import com.github.security.utils.JwtUtils;
 
 /**
@@ -57,12 +58,12 @@ public class JwtRefreshSuccessHandler implements AuthenticationSuccessHandler{
             
             String salt = jwtUserDetailsService.getSalt(user.getUsername());
             if (StringUtils.isBlank(salt)) {
-				salt = JwtUtils.TOKEN_SALT;
+				salt = JwtUtils.TOKEN_SECRET;
 			}
             String newToken = generToken(user, salt);
             jwtUserDetailsService.insertSalt(newToken, user);
             
-            response.setHeader("Authorization", newToken);
+            response.setHeader(JwtConstant.AUTHORIZATION_HEADER, newToken);
             
             logger.info("token refresh, new token : " + newToken);
         }	
@@ -76,7 +77,7 @@ public class JwtRefreshSuccessHandler implements AuthenticationSuccessHandler{
     }
 	
 	private String generToken(UserDetails user, String salt) {
-		return JwtUtils.createToken(user.getUsername(), user.getAuthorities(), false, salt);
+		return JwtUtils.createToken(user.getUsername(), user.getAuthorities(), salt);
 	}
 
 	public void setUserCache(UserCache userCache) {

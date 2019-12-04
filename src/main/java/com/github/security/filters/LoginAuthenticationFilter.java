@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.github.security.service.JwtUserDetailsService;
+import com.github.security.utils.JwtConstant;
 
 /**
  *  登录过滤器
@@ -27,11 +28,8 @@ import com.github.security.service.JwtUserDetailsService;
  */
 public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 	
-	public static final String SPRING_SECURITY_FORM_USERNAME_KEY = "username";
-	public static final String SPRING_SECURITY_FORM_PASSWORD_KEY = "password";
-
-	private String usernameParameter = SPRING_SECURITY_FORM_USERNAME_KEY;
-	private String passwordParameter = SPRING_SECURITY_FORM_PASSWORD_KEY;
+	private String usernameParameter = JwtConstant.SPRING_SECURITY_FORM_USERNAME_KEY;
+	private String passwordParameter = JwtConstant.SPRING_SECURITY_FORM_PASSWORD_KEY;
 	
 	private JwtUserDetailsService jwtUserDetailsService;
 	
@@ -41,7 +39,7 @@ public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingF
 	
 	@Override
 	public void afterPropertiesSet() {
-		Assert.notNull(getAuthenticationManager(), "authenticationManager must be specified");
+		Assert.notNull(getAuthenticationManager(), "AuthenticationManager must be specified");
 		Assert.notNull(getSuccessHandler(), "AuthenticationSuccessHandler must be specified");
 		Assert.notNull(getFailureHandler(), "AuthenticationFailureHandler must be specified");
 	}

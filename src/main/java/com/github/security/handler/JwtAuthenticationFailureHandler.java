@@ -1,6 +1,7 @@
-package com.github.security.authcatication;
+package com.github.security.handler;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -26,15 +27,17 @@ public class JwtAuthenticationFailureHandler implements AuthenticationFailureHan
 		response.setContentType("Application/json");
 		response.setCharacterEncoding("UTF-8");
 		response.setStatus(HttpStatus.UNAUTHORIZED.value());
+		PrintWriter out = response.getWriter();
 		
 		if (exception instanceof BadCredentialsException) {
-			response.getWriter().print("用户名或密码错误");
+			out.print("用户名或密码错误");
 		} else if (exception instanceof JwtVerificationFailedException) {
-			response.getWriter().print("token 验证失败");
+			out.print("token 验证失败");
 		} else if (exception instanceof JwtExpireException) {
-			response.getWriter().print("登录过期，请重新登录");
+			out.print("登录过期，请重新登录");
 		}
 		
+		out.flush();
 		logger.error(exception.getMessage());
 	}	
 }
