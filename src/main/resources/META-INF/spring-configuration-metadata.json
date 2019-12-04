@@ -18,6 +18,12 @@
       "type": "java.lang.Integer",
       "sourceType": "com.github.security.configuration.JwtProperties",
       "description": "token刷新时间"
+    },
+    {
+      "name": "jwt.security.clearInterval",
+      "type": "java.lang.Integer",
+      "sourceType": "com.github.security.configuration.JwtProperties",
+      "description": "黑名单清理时间"
     }
   ],
   "hints": []
