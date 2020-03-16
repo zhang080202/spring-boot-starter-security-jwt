@@ -87,19 +87,19 @@ public class JwtConfiguration implements InitializingBean {
 		return daoProvider;
 	}
 	
-	@Bean
-	@ConditionalOnMissingBean
-	protected CorsConfigurationSource corsConfigurationSource() {
-		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowCredentials(true);
-		configuration.setAllowedOrigins(Arrays.asList("*"));
-		configuration.setAllowedMethods(Arrays.asList("GET","POST","DELETE","PUT","HEAD", "OPTION"));
-		configuration.setAllowedHeaders(Arrays.asList("*"));
-		configuration.addExposedHeader("Authorization");
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", configuration);
-		return source;
-	}
+//	@Bean
+//	@ConditionalOnMissingBean
+//	protected CorsConfigurationSource corsConfigurationSource() {
+//		CorsConfiguration configuration = new CorsConfiguration();
+//		configuration.setAllowCredentials(true);
+//		configuration.setAllowedOrigins(Arrays.asList("*"));
+//		configuration.setAllowedMethods(Arrays.asList("GET","POST","DELETE","PUT","HEAD", "OPTION"));
+//		configuration.setAllowedHeaders(Arrays.asList("*"));
+//		configuration.addExposedHeader("Authorization");
+//		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//		source.registerCorsConfiguration("/**", configuration);
+//		return source;
+//	}
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
