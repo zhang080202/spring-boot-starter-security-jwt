@@ -40,6 +40,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler{
         
 		jwtUserDetailsService.insertSalt(token, user);
 		response.setHeader(JwtConstant.AUTHORIZATION_HEADER, JwtConstant.AUTHORIZATION_START_STRING + token);
+		response.setHeader(JwtConstant.ACCESS_CONTROL_EXPOSE_HEADER, JwtConstant.AUTHORIZATION_HEADER);
 		
 		logger.info("Login success! token : " + token);
 	}

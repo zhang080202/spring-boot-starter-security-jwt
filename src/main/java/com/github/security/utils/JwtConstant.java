@@ -4,6 +4,8 @@ public class JwtConstant {
 	
 	public static final String AUTHORIZATION_HEADER = "Authorization";
 	
+	public static final String ACCESS_CONTROL_EXPOSE_HEADER = "Access-Control-Expose-Headers";
+	
 	public static final String AUTHORIZATION_START_STRING = "Bearer ";
 	
 	public static final String TOKEN_NOT_EMPTY = "token must not be empty";
